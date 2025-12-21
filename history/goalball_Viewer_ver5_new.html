@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>골볼 데이터 뷰어 Ver5</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .header { background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%); color: white; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 15px; }
+        .section { background: rgba(255,255,255,0.95); margin: 15px 0; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); backdrop-filter: blur(10px); }
+        .section h3 { margin-bottom: 15px; color: #333; border-bottom: 3px solid #1976d2; padding-bottom: 8px; font-size: 18px; }
+        .match-info { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .match-info input, .match-info button { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+        .match-info button { background: linear-gradient(45deg, #1976d2, #42a5f5); color: white; border: none; cursor: pointer; transition: transform 0.2s; }
+        .match-info button:hover { transform: translateY(-2px); }
+        .record-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+        .team-btn, .player-btn, .skill-btn, .event-btn, .event2-btn, .period-btn { padding: 10px 15px; border: 2px solid #e0e0e0; background: white; cursor: pointer; border-radius: 8px; transition: all 0.3s; font-weight: 500; }
+        .team-btn.active.teamA { background: linear-gradient(45deg, #f44336, #ff7043); color: white; border-color: #f44336; box-shadow: 0 4px 15px rgba(244,67,54,0.3); }
+        .team-btn.active.teamB { background: linear-gradient(45deg, #2196f3, #42a5f5); color: white; border-color: #2196f3; box-shadow: 0 4px 15px rgba(33,150,243,0.3); }
+        .player-select { padding: 10px 15px; border: 2px solid #4caf50; border-radius: 8px; font-size: 14px; font-weight: 500; background: linear-gradient(45deg, #4caf50, #66bb6a); color: white; cursor: pointer; transition: all 0.3s; }
+        .player-select:hover { box-shadow: 0 4px 15px rgba(76,175,80,0.3); }
+        .skill-btn.active { background: linear-gradient(45deg, #ff9800, #ffb74d); color: white; border-color: #ff9800; box-shadow: 0 4px 15px rgba(255,152,0,0.3); }
+        .event-btn.active { background: linear-gradient(45deg, #9c27b0, #ba68c8); color: white; border-color: #9c27b0; box-shadow: 0 4px 15px rgba(156,39,176,0.3); }
+        .event2-btn.active { background: linear-gradient(45deg, #00bcd4, #4dd0e1); color: white; border-color: #00bcd4; box-shadow: 0 4px 15px rgba(0,188,212,0.3); }
+        .period-btn.active { background: linear-gradient(45deg, #607d8b, #90a4ae); color: white; border-color: #607d8b; box-shadow: 0 4px 15px rgba(96,125,139,0.3); }
+        .court-container { display: flex; gap: 25px; }
+        .court { 
+            width: 720px; 
+            height: 360px; 
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 25%, #81c784 50%, #4caf50 75%, #2e7d32 100%);
+            background-size: 400% 400%;
+            animation: courtGradient 8s ease infinite;
+            border: 6px solid #1b5e20; 
+            position: relative; 
+            cursor: crosshair; 
+            border-radius: 8px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.1); 
+            overflow: hidden;
+        }
+        @keyframes courtGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .court::before { 
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            width: 24px; 
+            height: 24px; 
+            border: 3px solid rgba(255,255,255,0.8); 
+            border-radius: 50%; 
+            transform: translate(-50%, -50%); 
+            background: radial-gradient(circle, rgba(255,255,255,0.2), transparent);
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+        .court::after { 
+            content: 'GOALBALL (18m × 9m)'; 
+            position: absolute; 
+            top: 15px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            color: #fff; 
+            font-size: 16px; 
+            font-weight: bold; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); 
+            background: linear-gradient(45deg, rgba(0,0,0,0.7), rgba(0,0,0,0.5)); 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(5px);
+        }
+        .zone-label { 
+            position: absolute; 
+            width: 90px; 
+            height: 45px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: #fff; 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8); 
+            pointer-events: auto; 
+            z-index: 10;
+            border-radius: 4px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .zone-label:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255,255,255,0.8);
+        }
+        .zone-label.selected {
+            border: 3px solid #ffeb3b !important;
+            box-shadow: 0 0 20px rgba(255,235,59,0.9), inset 0 0 15px rgba(255,235,59,0.3) !important;
+            transform: scale(1.15);
+            z-index: 20;
+        }
+        .zone-label.goal { background: linear-gradient(45deg, rgba(33,150,243,0.3), rgba(33,150,243,0.6)); border: 1px solid rgba(33,150,243,0.8); }
+        .zone-label.out { background: linear-gradient(45deg, rgba(244,67,54,0.3), rgba(244,67,54,0.6)); border: 1px solid rgba(244,67,54,0.8); }
+        .zone-label.play { background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3)); border: 1px solid rgba(255,255,255,0.4); }
+        .goal-left, .goal-right { 
+            position: absolute; 
+            top: 12.5%; 
+            width: 10px; 
+            height: 75%; 
+            background: linear-gradient(180deg, #fff 0%, #e0e0e0 100%); 
+            border: 3px solid #333; 
+            border-radius: 4px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 5px rgba(255,255,255,0.3);
+        }
+        .goal-left { left: -8px; border-right: none; }
+        .goal-right { right: -8px; border-left: none; }
+        .court-point { 
+            position: absolute; 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            border: 3px solid white; 
+            z-index: 10; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3);
+            transition: all 0.2s;
+        }
+        .course-line { position: absolute; border: 3px solid; z-index: 5; pointer-events: none; border-radius: 2px; }
+        .course-line.teamA { border-color: #f44336; box-shadow: 0 0 10px rgba(244,67,54,0.5); }
+        .course-line.teamB { border-color: #2196f3; box-shadow: 0 0 10px rgba(33,150,243,0.5); }
+        .court-point.teamA { background: linear-gradient(45deg, #f44336, #ff7043); }
+        .court-point.teamB { background: linear-gradient(45deg, #2196f3, #42a5f5); }
+        .side-panel { flex: 1; min-width: 320px; }
+        .course-info { background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 15px; border-radius: 8px; margin: 12px 0; border-left: 4px solid #1976d2; }
+        .record-item { 
+            background: rgba(255,255,255,0.9); 
+            padding: 12px; 
+            margin: 8px 0; 
+            border-left: 5px solid #1976d2; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .record-item:hover { background: #e3f2fd; transform: translateX(5px); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .record-item.editing { background: #fff3e0; border-left-color: #ff9800; }
+        .edit-controls { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
+        .edit-controls.show { display: block; }
+        .heat-cell { 
+            position: absolute; 
+            pointer-events: none; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #fff; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        /* 시각화 맵 전용 스타일 */
+        #trajectoryMap, #heatMap { 
+            width: 720px;
+            height: 360px;
+            background: linear-gradient(135deg, #37474f 0%, #546e7a 25%, #78909c 50%, #546e7a 75%, #37474f 100%);
+            background-size: 400% 400%;
+            animation: visualMapGradient 10s ease infinite;
+        }
+        @keyframes visualMapGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        #trajectoryMap .zone-label, #heatMap .zone-label { 
+            opacity: 0.6; 
+            font-size: 9px; 
+            background: rgba(255,255,255,0.1) !important; 
+            color: #ccc !important; 
+            text-shadow: none !important; 
+            border: 1px solid rgba(255,255,255,0.2) !important;
+        }
+        @media (max-width: 768px) { .court-container { flex-direction: column; } .court { width: 100%; max-width: 720px; margin: 0 auto; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏐 골볼 데이터 뷰어 Ver5</h1>
+    </div>
+    <div class="container">
+        <!-- 파일 불러오기 -->
+        <div class="section">
+            <h3>📁 데이터 파일 불러오기</h3>
+            <div style="border: 3px dashed #1976d2; border-radius: 12px; padding: 40px; text-align: center; background: linear-gradient(135deg, #f8f9fa, #e9ecef); transition: all 0.3s;">
+                <p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">JSON 또는 CSV 파일을 선택하세요</p>
+                <label for="fileInput" style="display: inline-block; background: linear-gradient(45deg, #1976d2, #42a5f5); color: white; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">파일 선택</label>
+                <input type="file" id="fileInput" style="display: none;" accept=".json,.csv" onchange="loadFile(event)">
+                <p style="margin-top: 20px; color: #666; font-size: 14px;">Tool에서 내보낸 JSON 또는 CSV 파일을 불러올 수 있습니다</p>
+            </div>
+        </div>
+        
+        <!-- 경기정보 표시 -->
+        <div class="section" id="matchInfoSection" style="display:none;">
+            <h3>📊 경기정보</h3>
+            <div class="match-info" id="matchInfo"></div>
+        </div>
+        
+        <!-- 데이터 시각화 보드 -->
+
+        
+        <!-- 데이터 시각화 보드 -->
+        <div class="section" id="visualBoard" style="display:none;">
+            <h3>데이터 시각화</h3>
+            
+            <!-- 궤적/히트맵 + 기본 통계 -->
+            <div style="display: flex; gap: 25px; margin-bottom: 25px; flex-wrap: wrap;">
+                <!-- 왼쪽: 궤적 그래프 + 히트맵 -->
+                <div style="flex: 1.5; min-width: 400px;">
+                    <!-- 궤적 그래프 -->
+                    <div style="margin-bottom: 25px;">
+                        <h4>궤적 그래프</h4>
+                        <div class="court" id="trajectoryMap" style="cursor: default; margin: 0 auto;">
+                            <div class="goal-left"></div>
+                            <div class="goal-right"></div>
+                            <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px;">모든 투구 궤적</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 히트맵 -->
+                    <div style="margin-bottom: 25px;">
+                        <h4>8×8 영역 빈도 히트맵</h4>
+                        <div class="court" id="heatMap" style="cursor: default; margin: 0 auto;">
+                            <div class="goal-left"></div>
+                            <div class="goal-right"></div>
+                            <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px;">이동→출발→릴리스→방향 빈도</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 기본 통계 -->
+                <div style="flex: 1; min-width: 300px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 20px; border-radius: 12px; border-left: 4px solid #4caf50;">
+                    <h4 style="margin-top: 0;">📊 기본 통계</h4>
+                    <div id="basicStatsContainer">
+                        <div id="totalThrowsStats" style="margin-bottom: 15px;"></div>
+                        <div id="teamStatsBar" style="margin-bottom: 15px;"></div>
+                        <div id="positionStats" style="margin-bottom: 15px;"></div>
+                        <div id="skillStatsChart" style="margin-bottom: 15px;"></div>
+                        <div id="playerStats" style="margin-bottom: 15px;"></div>
+                        <div id="eventStats" style="margin-bottom: 15px;"></div>
+                        <div id="event2Stats" style="margin-bottom: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 시간별 이벤트 그래프 -->
+            <div style="margin-bottom: 25px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 20px; border-radius: 12px; border-left: 4px solid #ff9800;">
+                <h4>시간별 이벤트 기록</h4>
+                <div id="timelineChart" style="background: white; height: 200px; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid #ddd;">
+                    <canvas id="timelineCanvas" width="100%" height="200" style="width: 100%; height: 100%;"></canvas>
+                    <div id="timelineEmpty" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #999; font-size: 14px; display: none;">
+                        기록된 데이터가 없습니다
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    각 점은 투구 기록 시점을 나타냅니다. (팀 선택 ~ 투구기록 완료까지의 시간)
+                </div>
+            </div>
+
+            <!-- 포지션 시퀀스 분석 -->
+            <div style="margin-bottom: 25px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 20px; border-radius: 12px; border-left: 4px solid #9c27b0;">
+                <h4>🎯 포지션 시퀀스 및 빈도 분석</h4>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <!-- A팀 시퀀스 -->
+                    <div style="flex: 1; min-width: 300px;">
+                        <h5 style="color: #f44336; margin-bottom: 10px;">A팀 투구 시퀀스</h5>
+                        <div id="sequenceChartA" style="background: white; height: 220px; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid #ddd;">
+                            <canvas id="sequenceCanvasA" style="width: 100%; height: 100%;"></canvas>
+                        </div>
+                        <div id="positionFreqA" style="margin-top: 10px; padding: 10px; background: white; border-radius: 8px; border: 1px solid #ddd; font-size: 12px;"></div>
+                    </div>
+                    
+                    <!-- B팀 시퀀스 -->
+                    <div style="flex: 1; min-width: 300px;">
+                        <h5 style="color: #2196f3; margin-bottom: 10px;">B팀 투구 시퀀스</h5>
+                        <div id="sequenceChartB" style="background: white; height: 220px; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid #ddd;">
+                            <canvas id="sequenceCanvasB" style="width: 100%; height: 100%;"></canvas>
+                        </div>
+                        <div id="positionFreqB" style="margin-top: 10px; padding: 10px; background: white; border-radius: 8px; border: 1px solid #ddd; font-size: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 투구코스 패턴 TOP 15 -->
+            <div style="margin-bottom: 25px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 20px; border-radius: 12px; border-left: 4px solid #9c27b0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0;">🏆 투구코스 패턴 TOP 15</h4>
+                    <div id="totalPatternsCount" style="font-size: 14px; font-weight: bold; color: #666;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div id="topPattern1to5" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                    <div id="topPattern6to10" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                    <div id="topPattern11to15" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd;"></div>
+                </div>
+            </div>
+            
+            <!-- 필터 및 통계 -->
+            <div style="display: flex; gap: 25px; margin-bottom: 25px; flex-wrap: wrap;">
+                <!-- 슬라이서 -->
+                <div style="flex: 1; min-width: 320px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 15px; border-radius: 12px; border-left: 4px solid #1976d2;">
+                    <h4 style="margin-top: 0;">필터 설정</h4>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">팀 선택:</label>
+                            <button onclick="toggleAllTeam()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <label style="margin-right: 15px; font-size: 12px;"><input type="checkbox" id="filterTeamA" checked> A팀</label>
+                        <label style="font-size: 12px;"><input type="checkbox" id="filterTeamB" checked> B팀</label>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">시간 선택:</label>
+                            <button onclick="toggleAllPeriod()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <label style="margin-right: 10px; font-size: 12px;"><input type="checkbox" id="filterFirstHalf" checked> 전반</label>
+                        <label style="margin-right: 10px; font-size: 12px;"><input type="checkbox" id="filterSecondHalf" checked> 후반</label>
+                        <label style="font-size: 12px;"><input type="checkbox" id="filterOvertime" checked> 연장전</label>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">선수 선택:</label>
+                            <button onclick="toggleAllPlayer()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <div id="playerFilters" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; font-size: 11px;">
+                            <label><input type="checkbox" class="player-filter" value="1" checked> 1</label>
+                            <label><input type="checkbox" class="player-filter" value="2" checked> 2</label>
+                            <label><input type="checkbox" class="player-filter" value="3" checked> 3</label>
+                            <label><input type="checkbox" class="player-filter" value="4" checked> 4</label>
+                            <label><input type="checkbox" class="player-filter" value="5" checked> 5</label>
+                            <label><input type="checkbox" class="player-filter" value="6" checked> 6</label>
+                            <label><input type="checkbox" class="player-filter" value="7" checked> 7</label>
+                            <label><input type="checkbox" class="player-filter" value="8" checked> 8</label>
+                            <label><input type="checkbox" class="player-filter" value="9" checked> 9</label>
+                            <label><input type="checkbox" class="player-filter" value="10" checked> 10</label>
+                            <label><input type="checkbox" class="player-filter" value="11" checked> 11</label>
+                            <label><input type="checkbox" class="player-filter" value="12" checked> 12</label>
+                            <label><input type="checkbox" class="player-filter" value="13" checked> 13</label>
+                            <label><input type="checkbox" class="player-filter" value="14" checked> 14</label>
+                            <label><input type="checkbox" class="player-filter" value="15" checked> 15</label>
+                            <label><input type="checkbox" class="player-filter" value="16" checked> 16</label>
+                            <label><input type="checkbox" class="player-filter" value="17" checked> 17</label>
+                            <label><input type="checkbox" class="player-filter" value="18" checked> 18</label>
+                            <label><input type="checkbox" class="player-filter" value="19" checked> 19</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">포지션 선택:</label>
+                            <button onclick="toggleAllPosition()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <div id="positionFilters" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 11px;">
+                            <label><input type="checkbox" class="position-filter" value="L" checked> L (왼쪽)</label>
+                            <label><input type="checkbox" class="position-filter" value="C" checked> C (중앙)</label>
+                            <label><input type="checkbox" class="position-filter" value="R" checked> R (오른쪽)</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">기술유형:</label>
+                            <button onclick="toggleAllSkill()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <div id="skillFilters" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-size: 11px;">
+                            <label><input type="checkbox" class="skill-filter" value="F" checked> F</label>
+                            <label><input type="checkbox" class="skill-filter" value="SB" checked> SB</label>
+                            <label><input type="checkbox" class="skill-filter" value="2B" checked> 2B</label>
+                            <label><input type="checkbox" class="skill-filter" value="3B" checked> 3B</label>
+                            <label><input type="checkbox" class="skill-filter" value="4B" checked> 4B</label>
+                            <label><input type="checkbox" class="skill-filter" value="TF" checked> TF</label>
+                            <label><input type="checkbox" class="skill-filter" value="TSB" checked> TSB</label>
+                            <label><input type="checkbox" class="skill-filter" value="T2B" checked> T2B</label>
+                            <label><input type="checkbox" class="skill-filter" value="T3B" checked> T3B</label>
+                            <label><input type="checkbox" class="skill-filter" value="T4B" checked> T4B</label>
+                            <label><input type="checkbox" class="skill-filter" value="IC" checked> IC</label>
+                            <label><input type="checkbox" class="skill-filter" value="OC" checked> OC</label>
+                            <label><input type="checkbox" class="skill-filter" value="미지정" checked> 미지정</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">이벤트:</label>
+                            <button onclick="toggleAllEvent()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <div id="eventFilters" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px;">
+                            <label><input type="checkbox" class="event-filter" value="G" checked> G</label>
+                            <label><input type="checkbox" class="event-filter" value="H" checked> H</label>
+                            <label><input type="checkbox" class="event-filter" value="L" checked> L</label>
+                            <label><input type="checkbox" class="event-filter" value="TP" checked> TP</label>
+                            <label><input type="checkbox" class="event-filter" value="미지정" checked> 미지정</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="font-weight: bold; font-size: 13px;">이벤트2:</label>
+                            <button onclick="toggleAllEvent2()" style="background: #4caf50; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">전체선택</button>
+                        </div>
+                        <div id="event2Filters" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; font-size: 11px;">
+                            <label><input type="checkbox" class="event2-filter" value="FB" checked> FB</label>
+                            <label><input type="checkbox" class="event2-filter" value="PT" checked> PT</label>
+                            <label><input type="checkbox" class="event2-filter" value="미지정" checked> 미지정</label>
+                        </div>
+                    </div>
+                    <button onclick="updateVisualizations()" style="background: linear-gradient(45deg, #1976d2, #42a5f5); color: white; padding: 10px 16px; border: none; border-radius: 8px; width: 100%; font-weight: bold; font-size: 13px; margin-top: 5px;">필터 적용</button>
+                </div>
+                
+                <!-- 통계 -->
+                <div style="flex: 1; min-width: 320px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 15px; border-radius: 12px; border-left: 4px solid #ff9800;">
+                    <h4 style="margin-top: 0;">⚽ 골 이벤트 분석</h4>
+                    <div id="statsContainer">
+                        <div id="goalPatternSection"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 컨트롤 버튼 -->
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="clearVisualizations()" style="background: linear-gradient(45deg, #757575, #9e9e9e); color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; margin: 5px;">시각화 지우기</button>
+                <button onclick="exportJSON()" style="background: linear-gradient(45deg, #2196F3, #42A5F5); color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; margin: 5px;">JSON 내보내기</button>
+                <button onclick="exportCSV()" style="background: linear-gradient(45deg, #4CAF50, #66BB6A); color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; margin: 5px;">CSV 내보내기</button>
+                <button onclick="showEmailDialog()" style="background: linear-gradient(45deg, #FF9800, #FFB74D); color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; margin: 5px;">이메일 발송</button>
+            </div>
+            
+            <!-- 이메일 다이얼로그 (숨김) -->
+            <div id="emailDialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); padding: 30px; z-index: 1000; min-width: 400px;">
+                <h3 style="margin-top: 0; color: #333;">데이터 이메일 발송</h3>
+                <div style="margin: 15px 0;">
+                    <label for="recipientEmail" style="display: block; margin-bottom: 5px; font-weight: bold;">받는 사람 이메일:</label>
+                    <input type="email" id="recipientEmail" placeholder="example@email.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label for="senderEmail" style="display: block; margin-bottom: 5px; font-weight: bold;">보내는 사람 이메일:</label>
+                    <input type="email" id="senderEmail" placeholder="your@email.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">파일 형식:</label>
+                    <label style="margin-right: 20px;"><input type="radio" name="emailFormat" value="json" checked> JSON</label>
+                    <label><input type="radio" name="emailFormat" value="csv"> CSV</label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label for="emailMessage" style="display: block; margin-bottom: 5px; font-weight: bold;">메시지 (선택사항):</label>
+                    <textarea id="emailMessage" placeholder="추가 메시지를 입력하세요..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; resize: vertical;"></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button onclick="closeEmailDialog()" style="background: #757575; color: white; padding: 10px 20px; border: none; border-radius: 6px; margin-right: 10px; cursor: pointer;">취소</button>
+                    <button onclick="sendEmail()" style="background: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">발송</button>
+                </div>
+            </div>
+            
+            <!-- 이메일 다이얼로그 배경 (숨김) -->
+            <div id="emailOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;" onclick="closeEmailDialog()"></div>
+        </div>
+    </div>
+    <script>
+        // 전역 변수
+        let matchData = { records: [], status: 'waiting', startTime: null };
+        let currentTeam = 'A';
+        let currentPlayer = 1;
+        let currentPeriod = '전반'; // 전반/후반/연장전 추가
+        let currentSkill = '';
+        let currentEvent = '';
+        let currentEvent2 = ''; // 이벤트2 추가
+        let currentCourse = [];
+        let throwCounter = 0;
+        let editingRecordId = null;
+        let teamSelectTime = null; // 팀 선택 시간 추적
+        
+        // 포지션 매핑 (팀-선수번호 → 포지션)
+        let positionMap = {
+            A: { L: null, C: null, R: null },
+            B: { L: null, C: null, R: null }
+        };
+        
+        // 선택된 구역 추적
+        let selectedZones = new Set();
+        
+        // 선택된 선수 추적
+        let selectedPlayer = null;
+        
+        // 선수번호로 포지션 찾기
+        function getPosition(team, player) {
+            if (positionMap[team].L === player) return 'L';
+            if (positionMap[team].C === player) return 'C';
+            if (positionMap[team].R === player) return 'R';
+            return '-'; // 포지션 미지정
+        }
+
+        // 파일 로드
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    let data;
+
+                    if (file.name.endsWith('.json')) {
+                        data = JSON.parse(content);
+                    } else if (file.name.endsWith('.csv')) {
+                        data = parseCSV(content);
+                    } else {
+                        alert('지원하지 않는 파일 형식입니다. JSON 또는 CSV 파일을 선택하세요.');
+                        return;
+                    }
+
+                    // 데이터 구조 검증
+                    if (!data.records || !Array.isArray(data.records)) {
+                        alert('올바른 데이터 형식이 아닙니다.');
+                        return;
+                    }
+
+                    // 경기 정보 표시
+                    displayMatchInfo(data);
+
+                    // 데이터 로드
+                    matchData.records = data.records;
+                    matchData.status = 'inProgress';
+                    matchData.startTime = data.startTime || null;
+
+                    // 포지션 맵 복원 (있는 경우)
+                    if (data.positionMap) {
+                        positionMap = data.positionMap;
+                    }
+
+                    // 시각화 표시
+                    document.getElementById('visualBoard').style.display = 'block';
+                    
+                    // 모든 시각화 업데이트
+                    updateVisualizations();
+
+                    alert(`${data.records.length}개의 기록을 불러왔습니다.`);
+                } catch (error) {
+                    alert('파일 로드 중 오류가 발생했습니다: ' + error.message);
+                    console.error(error);
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        // CSV 파싱
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) {
+                throw new Error('CSV 파일이 비어있거나 헤더만 포함되어 있습니다.');
+            }
+
+            const headers = lines[0].split(',').map(h => h.trim());
+            const records = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                const record = {
+                    id: parseInt(values[0]) || i,
+                    timestamp: values[1] || '',
+                    team: values[2] || '',
+                    player: parseInt(values[3]) || 0,
+                    position: values[4] || '-',
+                    period: values[5] || '전반',
+                    skill: values[6] || '',
+                    event: values[7] || '',
+                    event2: values[8] || '',
+                    pattern: values[9] || '',
+                    gameTime: parseFloat(values[10]) || 0,
+                    course: []
+                };
+
+                // course 데이터 파싱 (11번째 열부터)
+                const courseTypes = ['move', 'start', 'release', 'direction'];
+                for (let j = 0; j < 4; j++) {
+                    const xIdx = 11 + j * 2;
+                    const yIdx = 12 + j * 2;
+                    const x = values[xIdx] ? parseFloat(values[xIdx]) : null;
+                    const y = values[yIdx] ? parseFloat(values[yIdx]) : null;
+                    record.course.push({ type: courseTypes[j], x, y });
+                }
+
+                records.push(record);
+            }
+
+            return { records, startTime: Date.now(), positionMap };
+        }
+
+        // 경기 정보 표시
+        function displayMatchInfo(data) {
+            const infoSection = document.getElementById('matchInfoSection');
+            const matchDate = data.matchDate || '미상';
+            const matchName = data.matchName || '미상';
+            const teamA = data.teamA || 'A팀';
+            const teamB = data.teamB || 'B팀';
+            const recordCount = data.records.length;
+
+            infoSection.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div>
+                        <strong>경기 날짜:</strong> ${matchDate}
+                    </div>
+                    <div>
+                        <strong>경기명:</strong> ${matchName}
+                    </div>
+                    <div>
+                        <strong>팀 A:</strong> ${teamA}
+                    </div>
+                    <div>
+                        <strong>팀 B:</strong> ${teamB}
+                    </div>
+                    <div>
+                        <strong>총 기록 수:</strong> ${recordCount}개
+                    </div>
+                    <div>
+                        <strong>로드 시간:</strong> ${new Date().toLocaleTimeString()}
+                    </div>
+                </div>
+            `;
+            infoSection.style.display = 'block';
+        }
+
+        // 범주화 함수들
+        function categorizePosition(x, y, team) {
+            const zoneX = Math.floor((x / 720) * 8);
+            const zoneY = Math.floor((y / 360) * 8);
+            
+            if (zoneY === 0 || zoneY === 7) return 'OUT';
+            if (zoneX === 0 && zoneY >= 1 && zoneY <= 6) return 'A골대';
+            if (zoneX === 7 && zoneY >= 1 && zoneY <= 6) return 'B골대';
+            if (zoneX >= 1 && zoneX <= 6 && zoneY >= 1 && zoneY <= 6) {
+                const zoneNum = (zoneY - 1) * 6 + (zoneX - 1) + 1;
+                return zoneNum;
+            }
+            return `${zoneX},${zoneY}`;
+        }
+
+        function getCoursePattern(course, team) {
+            const types = ['move', 'start', 'release', 'direction'];
+            const pattern = [];
+            
+            types.forEach(type => {
+                const point = course.find(p => p.type === type);
+                if (point && point.x !== null && point.y !== null) {
+                    const category = categorizePosition(point.x, point.y, team);
+                    pattern.push(category);
+                } else {
+                    pattern.push(-1);
+                }
+            });
+            
+            return pattern.join('-');
+        }
+
+
+        // 경기장에 구역 라벨 추가 (시각화용)
+        function addZoneLabels() {
+            // Viewer에서는 사용하지 않음 (recordSection 제거됨)
+        }
+
+        // 시각화 구역 라벨 추가
+        function addZoneLabelsToVisualization() {
+            const maps = ['trajectoryMap', 'heatMap'];
+            
+            const zoneWidth = 90;
+            const zoneHeight = 45;
+            
+            maps.forEach(mapId => {
+                const map = document.getElementById(mapId);
+                if (!map) return;
+                
+                map.querySelectorAll('.zone-label').forEach(el => el.remove());
+                
+                for (let x = 0; x < 8; x++) {
+                    for (let y = 0; y < 8; y++) {
+                        const label = document.createElement('div');
+                        label.className = 'zone-label';
+                        label.style.left = (x * zoneWidth) + 'px';
+                        label.style.top = (y * zoneHeight) + 'px';
+                        label.style.width = zoneWidth + 'px';
+                        label.style.height = zoneHeight + 'px';
+                        label.style.fontSize = '11px';
+                        
+                        const zoneKey = `${x},${y}`;
+                        let zoneDisplay = '';
+                        
+                        if (y === 0 || y === 7) {
+                            label.classList.add('out');
+                            zoneDisplay = 'OUT';
+                        } else if (x === 0 && y >= 1 && y <= 6) {
+                            label.classList.add('goal');
+                            zoneDisplay = 'A골대';
+                        } else if (x === 7 && y >= 1 && y <= 6) {
+                            label.classList.add('goal');
+                            zoneDisplay = 'B골대';
+                        } else if (x >= 1 && x <= 6 && y >= 1 && y <= 6) {
+                            label.classList.add('play');
+                            const zoneNum = (y - 1) * 6 + (x - 1) + 1;
+                            zoneDisplay = zoneNum;
+                        } else {
+                            zoneDisplay = `${x},${y}`;
+                            label.style.fontSize = '9px';
+                            label.style.color = '#999';
+                        }
+                        
+                        label.textContent = zoneDisplay;
+                        label.dataset.zone = zoneKey;
+                        
+                        // 클릭 이벤트 추가
+                        label.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            toggleZoneSelection(zoneKey);
+                        });
+                        
+                        // 선택된 구역인지 확인
+                        if (selectedZones.has(zoneKey)) {
+                            label.classList.add('selected');
+                        }
+                        
+                        map.appendChild(label);
+                    }
+                }
+            });
+        }
+        
+        // 구역 선택 토글
+        function toggleZoneSelection(zoneKey) {
+            if (selectedZones.has(zoneKey)) {
+                selectedZones.delete(zoneKey);
+            } else {
+                selectedZones.add(zoneKey);
+            }
+            
+            // 모든 맵의 라벨 업데이트
+            document.querySelectorAll('.zone-label').forEach(label => {
+                if (label.dataset.zone === zoneKey) {
+                    label.classList.toggle('selected');
+                }
+            });
+            
+            // 시각화 업데이트
+            updateVisualizations();
+        }
+        
+        // 선수 선택 토글
+        function selectPlayer(team, player) {
+            if (selectedPlayer && selectedPlayer.team === team && selectedPlayer.player === player) {
+                // 이미 선택된 선수를 다시 클릭하면 선택 해제
+                selectedPlayer = null;
+            } else {
+                // 새로운 선수 선택
+                selectedPlayer = { team, player };
+            }
+            
+            // 선수 카드 스타일 업데이트
+            document.querySelectorAll('.player-card').forEach(card => {
+                const cardTeam = card.dataset.team;
+                const cardPlayer = parseInt(card.dataset.player);
+                if (selectedPlayer && cardTeam === selectedPlayer.team && cardPlayer === selectedPlayer.player) {
+                    card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                    card.style.transform = 'scale(1.05)';
+                    card.style.background = '#fffacd';
+                } else {
+                    card.style.boxShadow = 'none';
+                    card.style.transform = 'scale(1)';
+                    card.style.background = 'white';
+                }
+            });
+            
+            // 시각화 업데이트
+            updateVisualizations();
+        }
+
+        function getFilteredRecords() {
+            const showTeamA = document.getElementById('filterTeamA').checked;
+            const showTeamB = document.getElementById('filterTeamB').checked;
+            const showFirstHalf = document.getElementById('filterFirstHalf').checked;
+            const showSecondHalf = document.getElementById('filterSecondHalf').checked;
+            const showOvertime = document.getElementById('filterOvertime').checked;
+            const selectedPlayers = Array.from(document.querySelectorAll('.player-filter:checked')).map(cb => parseInt(cb.value));
+            const selectedPositions = Array.from(document.querySelectorAll('.position-filter:checked')).map(cb => cb.value);
+            const selectedSkills = Array.from(document.querySelectorAll('.skill-filter:checked')).map(cb => cb.value);
+            const selectedEvents = Array.from(document.querySelectorAll('.event-filter:checked')).map(cb => cb.value);
+            const selectedEvents2 = Array.from(document.querySelectorAll('.event2-filter:checked')).map(cb => cb.value);
+            
+            console.log('팀A:', showTeamA, '팀B:', showTeamB, '전반:', showFirstHalf);
+            console.log('선수:', selectedPlayers, '포지션:', selectedPositions, '스킬:', selectedSkills, '이벤트:', selectedEvents);
+            console.log('전체 레코드:', matchData.records.length);
+            
+            const filtered = matchData.records.filter(record => {
+                const teamMatch = (record.team === 'A' && showTeamA) || (record.team === 'B' && showTeamB);
+                const periodMatch = 
+                    ((record.period || '전반') === '전반' && showFirstHalf) || 
+                    ((record.period || '전반') === '후반' && showSecondHalf) ||
+                    ((record.period || '전반') === '연장전' && showOvertime);
+                const playerMatch = selectedPlayers.length === 0 || selectedPlayers.includes(record.player);
+                const positionMatch = selectedPositions.length === 0 || selectedPositions.includes(record.position);
+                
+                // 빈 문자열을 '미지정'으로 처리
+                const recordSkill = record.skill && record.skill !== '' ? record.skill : '미지정';
+                const recordEvent = record.event && record.event !== '' ? record.event : '미지정';
+                const recordEvent2 = record.event2 && record.event2 !== '' ? record.event2 : '미지정';
+                
+                const skillMatch = selectedSkills.length === 0 || selectedSkills.includes(recordSkill);
+                const eventMatch = selectedEvents.length === 0 || selectedEvents.includes(recordEvent);
+                const event2Match = selectedEvents2.length === 0 || selectedEvents2.includes(recordEvent2);
+                
+                // 구역 필터링 추가
+                let zoneMatch = true;
+                if (selectedZones.size > 0) {
+                    zoneMatch = record.course.some(point => {
+                        if (point.x !== null && point.y !== null) {
+                            const zoneX = Math.floor((point.x / 720) * 8);
+                            const zoneY = Math.floor((point.y / 360) * 8);
+                            const zoneKey = `${zoneX},${zoneY}`;
+                            return selectedZones.has(zoneKey);
+                        }
+                        return false;
+                    });
+                }
+                
+                console.log('레코드:', record.team, record.player, record.position, 'event:', record.event, '→', recordEvent, '매치:', teamMatch, periodMatch, playerMatch, positionMatch, skillMatch, eventMatch);
+                
+                return teamMatch && periodMatch && playerMatch && positionMatch && skillMatch && eventMatch && event2Match && zoneMatch;
+            });
+            
+            console.log('필터링된 결과:', filtered.length, '개');
+            return filtered;
+        }
+
+        function updateStats() {
+            const filteredRecords = getFilteredRecords();
+            
+            const totalThrows = filteredRecords.length;
+            const teamACount = filteredRecords.filter(r => r.team === 'A').length;
+            const teamBCount = filteredRecords.filter(r => r.team === 'B').length;
+            const percentA = totalThrows > 0 ? ((teamACount / totalThrows) * 100).toFixed(1) : 0;
+            const percentB = totalThrows > 0 ? ((teamBCount / totalThrows) * 100).toFixed(1) : 0;
+            
+            // 기본 통계 영역에 총 투구수 추가
+            document.getElementById('totalThrowsStats').innerHTML = `
+                <div style="background: linear-gradient(45deg, #1976d2, #42a5f5); color: white; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
+                    <div style="font-size: 12px; opacity: 0.9;">총 투구수</div>
+                    <div style="font-size: 28px; font-weight: bold; margin-top: 5px;">${totalThrows}</div>
+                </div>
+            `;
+            
+            // 팀별 투구수
+            document.getElementById('teamStatsBar').innerHTML = `
+                <strong style="font-size: 13px;">팀별 투구수:</strong><br>
+                <div style="margin-top: 8px; font-size: 12px;">
+                    <div style="margin-bottom: 8px; display: flex; align-items: center;">
+                        <div style="width: 30px; font-size: 11px; margin-right: 5px; font-weight: bold; color: #f44336;">A팀</div>
+                        <div style="flex: 1; height: 18px; background: #e0e0e0; border-radius: 9px; overflow: hidden;">
+                            <div style="width: ${percentA}%; height: 100%; background: #f44336; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px;">
+                                <span style="color: white; font-size: 10px; font-weight: bold;">${teamACount}</span>
+                            </div>
+                        </div>
+                        <div style="width: 60px; text-align: right; font-size: 11px; margin-left: 5px;">${percentA}%</div>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 30px; font-size: 11px; margin-right: 5px; font-weight: bold; color: #2196f3;">B팀</div>
+                        <div style="flex: 1; height: 18px; background: #e0e0e0; border-radius: 9px; overflow: hidden;">
+                            <div style="width: ${percentB}%; height: 100%; background: #2196f3; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px;">
+                                <span style="color: white; font-size: 10px; font-weight: bold;">${teamBCount}</span>
+                            </div>
+                        </div>
+                        <div style="width: 60px; text-align: right; font-size: 11px; margin-left: 5px;">${percentB}%</div>
+                    </div>
+                </div>
+            `;
+            
+            // 포지션 통계
+            const positionCounts = { 'L': 0, 'C': 0, 'R': 0 };
+            filteredRecords.forEach(r => {
+                const pos = r.position || '-';
+                if (positionCounts.hasOwnProperty(pos)) {
+                    positionCounts[pos]++;
+                }
+            });
+            const totalWithPos = positionCounts.L + positionCounts.C + positionCounts.R;
+            const percentL = totalWithPos > 0 ? ((positionCounts.L / totalWithPos) * 100).toFixed(1) : 0;
+            const percentC = totalWithPos > 0 ? ((positionCounts.C / totalWithPos) * 100).toFixed(1) : 0;
+            const percentR = totalWithPos > 0 ? ((positionCounts.R / totalWithPos) * 100).toFixed(1) : 0;
+            
+            document.getElementById('positionStats').innerHTML = `
+                <strong style="font-size: 13px;">포지션 빈도:</strong><br>
+                <div style="margin-top: 5px; font-size: 11px;">
+                    <div style="margin-bottom: 5px; display: flex; align-items: center;">
+                        <div style="width: 20px; margin-right: 5px; font-weight: bold;">L</div>
+                        <div style="flex: 1; height: 14px; background: #e0e0e0; border-radius: 7px; overflow: hidden;">
+                            <div style="width: ${percentL}%; height: 100%; background: #ff9800;"></div>
+                        </div>
+                        <div style="width: 80px; text-align: right; margin-left: 5px;">${positionCounts.L}회 (${percentL}%)</div>
+                    </div>
+                    <div style="margin-bottom: 5px; display: flex; align-items: center;">
+                        <div style="width: 20px; margin-right: 5px; font-weight: bold;">C</div>
+                        <div style="flex: 1; height: 14px; background: #e0e0e0; border-radius: 7px; overflow: hidden;">
+                            <div style="width: ${percentC}%; height: 100%; background: #ff9800;"></div>
+                        </div>
+                        <div style="width: 80px; text-align: right; margin-left: 5px;">${positionCounts.C}회 (${percentC}%)</div>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 20px; margin-right: 5px; font-weight: bold;">R</div>
+                        <div style="flex: 1; height: 14px; background: #e0e0e0; border-radius: 7px; overflow: hidden;">
+                            <div style="width: ${percentR}%; height: 100%; background: #ff9800;"></div>
+                        </div>
+                        <div style="width: 80px; text-align: right; margin-left: 5px;">${positionCounts.R}회 (${percentR}%)</div>
+                    </div>
+                </div>
+            `;
+            
+            // 기술유형 배지 형태
+            const skillCounts = {};
+            filteredRecords.forEach(r => {
+                const skill = r.skill || '미지정';
+                skillCounts[skill] = (skillCounts[skill] || 0) + 1;
+            });
+            
+            const skillTotal = Object.values(skillCounts).reduce((a, b) => a + b, 0);
+            let skillHtml = '<strong style="font-size: 13px;">기술유형:</strong><br>';
+            skillHtml += '<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; font-size: 10px;">';
+            
+            const skillColors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#ff6384', '#c9cbcf', '#4bc0c0', '#ff6384', '#36a2eb', '#ffce56'];
+            let colorIndex = 0;
+            
+            Object.entries(skillCounts).forEach(([skill, count]) => {
+                const percent = ((count / skillTotal) * 100).toFixed(1);
+                const color = skillColors[colorIndex % skillColors.length];
+                skillHtml += `
+                    <div style="display: flex; align-items: center; padding: 3px 6px; background: white; border-radius: 5px; border: 2px solid ${color};">
+                        <div style="width: 10px; height: 10px; background: ${color}; border-radius: 50%; margin-right: 4px;"></div>
+                        <span><strong>${skill}</strong>: ${count} (${percent}%)</span>
+                    </div>
+                `;
+                colorIndex++;
+            });
+            skillHtml += '</div>';
+            document.getElementById('skillStatsChart').innerHTML = skillHtml;
+            
+            // 선수별 통계
+            const playerStats = {};
+            filteredRecords.forEach(r => {
+                const playerKey = `${r.team}-${r.player}`;
+                if (!playerStats[playerKey]) {
+                    playerStats[playerKey] = {
+                        team: r.team,
+                        player: r.player,
+                        count: 0,
+                        skills: {},
+                        directionZones: {}
+                    };
+                }
+                playerStats[playerKey].count++;
+                
+                // 기술 집계
+                const skill = r.skill || '미지정';
+                playerStats[playerKey].skills[skill] = (playerStats[playerKey].skills[skill] || 0) + 1;
+                
+                // 방향 위치 (direction 포인트) 집계
+                const directionPoint = r.course.find(p => p.type === 'direction');
+                if (directionPoint && directionPoint.x !== null && directionPoint.y !== null) {
+                    const zoneX = Math.floor((directionPoint.x / 720) * 8);
+                    const zoneY = Math.floor((directionPoint.y / 360) * 8);
+                    const zoneKey = `${zoneX},${zoneY}`;
+                    playerStats[playerKey].directionZones[zoneKey] = (playerStats[playerKey].directionZones[zoneKey] || 0) + 1;
+                }
+            });
+            
+            // 투구 수 상위 5명 선수
+            const topPlayers = Object.values(playerStats)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+            
+            let playerHtml = '<strong style="font-size: 13px;">👤 선수별 통계 (TOP 5):</strong><br>';
+            playerHtml += '<div style="margin-top: 8px; font-size: 10px; max-height: 200px; overflow-y: auto;">';
+            
+            topPlayers.forEach((player, index) => {
+                const teamColor = player.team === 'A' ? '#f44336' : '#2196f3';
+                
+                // 주요 기술 (상위 2개)
+                const topSkills = Object.entries(player.skills)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 2)
+                    .map(([skill, count]) => `${skill}(${count})`)
+                    .join(', ');
+                
+                // 선호 코스 (상위 1개)
+                const topZone = Object.entries(player.directionZones)
+                    .sort((a, b) => b[1] - a[1])[0];
+                const preferredCourse = topZone ? `구역 ${topZone[0]}` : '없음';
+                
+                playerHtml += `
+                    <div class="player-card" 
+                         data-team="${player.team}" 
+                         data-player="${player.player}"
+                         onclick="selectPlayer('${player.team}', ${player.player})"
+                         style="margin-bottom: 8px; padding: 6px; background: white; border-radius: 5px; border-left: 3px solid ${teamColor}; cursor: pointer; transition: all 0.2s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                            <span style="font-weight: bold; color: ${teamColor};">#${index + 1} ${player.team}팀 ${player.player}번</span>
+                            <span style="background: ${teamColor}; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${player.count}회</span>
+                        </div>
+                        <div style="color: #666; font-size: 9px;">
+                            주요기술: ${topSkills}<br>
+                            선호코스: ${preferredCourse}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            playerHtml += '</div>';
+            document.getElementById('playerStats').innerHTML = playerHtml;
+            
+            // 이벤트
+            const eventCounts = {};
+            filteredRecords.forEach(r => {
+                const event = r.event || '미지정';
+                eventCounts[event] = (eventCounts[event] || 0) + 1;
+            });
+            const eventList = Object.entries(eventCounts).map(([event, count]) => `${event}: ${count}`).join(' | ');
+            document.getElementById('eventStats').innerHTML = `<strong style="font-size: 13px;">이벤트:</strong><br><span style="font-size: 11px;">${eventList}</span>`;
+            
+            // 이벤트2
+            const event2Counts = {};
+            filteredRecords.forEach(r => {
+                const event2 = r.event2 || '미지정';
+                event2Counts[event2] = (event2Counts[event2] || 0) + 1;
+            });
+            const event2List = Object.entries(event2Counts).map(([event2, count]) => `${event2}: ${count}`).join(' | ');
+            document.getElementById('event2Stats').innerHTML = `<strong style="font-size: 13px;">이벤트2:</strong><br><span style="font-size: 11px;">${event2List}</span>`;
+            
+            // 투구코스 패턴 TOP 15 (3칸으로 분리)
+            const patternCounts = {};
+            filteredRecords.forEach(r => {
+                const pattern = r.pattern || '미지정';
+                patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+            });
+            
+            const totalPatterns = Object.keys(patternCounts).length;
+            document.getElementById('totalPatternsCount').innerHTML = `총 <strong>${totalPatterns}</strong>개 패턴`;
+            
+            const topPatterns = Object.entries(patternCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15);
+            
+            // 1-5위
+            let pattern1to5Html = '<strong style="font-size: 12px; color: #9c27b0;">🥇 TOP 1-5</strong><br>';
+            pattern1to5Html += '<div style="font-size: 10px; margin-top: 5px;">';
+            topPatterns.slice(0, 5).forEach(([pattern, count], index) => {
+                const percent = filteredRecords.length > 0 ? ((count / filteredRecords.length) * 100).toFixed(1) : 0;
+                pattern1to5Html += `<div style="margin-bottom: 3px; padding: 2px; background: rgba(156,39,176,0.05); border-radius: 3px;">${index + 1}. ${pattern}: ${count}회 (${percent}%)</div>`;
+            });
+            pattern1to5Html += '</div>';
+            document.getElementById('topPattern1to5').innerHTML = pattern1to5Html;
+            
+            // 6-10위
+            let pattern6to10Html = '<strong style="font-size: 12px; color: #9c27b0;">🥈 TOP 6-10</strong><br>';
+            pattern6to10Html += '<div style="font-size: 10px; margin-top: 5px;">';
+            topPatterns.slice(5, 10).forEach(([pattern, count], index) => {
+                const percent = filteredRecords.length > 0 ? ((count / filteredRecords.length) * 100).toFixed(1) : 0;
+                pattern6to10Html += `<div style="margin-bottom: 3px; padding: 2px; background: rgba(156,39,176,0.05); border-radius: 3px;">${index + 6}. ${pattern}: ${count}회 (${percent}%)</div>`;
+            });
+            pattern6to10Html += '</div>';
+            document.getElementById('topPattern6to10').innerHTML = pattern6to10Html;
+            
+            // 11-15위
+            let pattern11to15Html = '<strong style="font-size: 12px; color: #9c27b0;">🥉 TOP 11-15</strong><br>';
+            pattern11to15Html += '<div style="font-size: 10px; margin-top: 5px;">';
+            topPatterns.slice(10, 15).forEach(([pattern, count], index) => {
+                const percent = filteredRecords.length > 0 ? ((count / filteredRecords.length) * 100).toFixed(1) : 0;
+                pattern11to15Html += `<div style="margin-bottom: 3px; padding: 2px; background: rgba(156,39,176,0.05); border-radius: 3px;">${index + 11}. ${pattern}: ${count}회 (${percent}%)</div>`;
+            });
+            pattern11to15Html += '</div>';
+            document.getElementById('topPattern11to15').innerHTML = pattern11to15Html;
+            
+            // 골 전 5개 코스패턴
+            updateGoalCoursePattern(filteredRecords);
+        }
+
+        function updateVisualizations() {
+            console.log('updateVisualizations 시작');
+            addZoneLabelsToVisualization(); // 구역 라벨 먼저 추가
+            console.log('addZoneLabelsToVisualization 완료');
+            updateTimelineChart();
+            console.log('updateTimelineChart 완료');
+            updateTrajectoryMap();
+            console.log('updateTrajectoryMap 완료');
+            updateHeatMap();
+            console.log('updateHeatMap 완료');
+            updateStats();
+            console.log('updateStats 완료');
+            updatePositionSequence();
+            console.log('updatePositionSequence 완료');
+            console.log('updateVisualizations 완료');
+        }
+
+        function updateTimelineChart() {
+            console.log('updateTimelineChart 시작');
+            const canvas = document.getElementById('timelineCanvas');
+            console.log('canvas:', canvas);
+            const ctx = canvas.getContext('2d');
+            const filteredRecords = getFilteredRecords();
+            console.log('filteredRecords:', filteredRecords.length);
+            
+            // 캔버스 크기 설정
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            // 캔버스 클리어
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (filteredRecords.length === 0) {
+                document.getElementById('timelineEmpty').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('timelineEmpty').style.display = 'none';
+            
+            // 이벤트 이모티콘 매핑
+            const eventEmojis = {
+                'G': '⚽',      // Goal - 골 득점
+                'H': '⬆️',      // High Ball - 하이볼 반칙
+                'L': '➡️',      // Long Ball - 롱볼 반칙
+                'TP': '⚠️',     // Team Penalty - 팀 패널티
+                '미지정': '●'
+            };
+            
+            const event2Emojis = {
+                'FB': '⚡',     // Fast Break - 속공
+                'PT': '🎯'      // Penalty Throw - 패널티 스로우
+            };
+            
+            // 시간 범위 계산 → 투구 순서로 변경
+            const totalRecords = filteredRecords.length;
+            
+            // 그래프 여백 설정
+            const margin = { top: 50, right: 40, bottom: 40, left: 60 };
+            const chartWidth = canvas.width - margin.left - margin.right;
+            const chartHeight = canvas.height - margin.top - margin.bottom;
+            const centerY = margin.top + chartHeight / 2;
+            
+            // 배경 그리기
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(margin.left, margin.top, chartWidth, chartHeight);
+            
+            // 중앙선 그리기
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, centerY);
+            ctx.lineTo(margin.left + chartWidth, centerY);
+            ctx.stroke();
+            
+            // X축 (투구 순서축) 그리기
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, margin.top + chartHeight);
+            ctx.lineTo(margin.left + chartWidth, margin.top + chartHeight);
+            ctx.stroke();
+            
+            // Y축 라벨
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('A팀', 20, margin.top + chartHeight / 4);
+            ctx.fillText('B팀', 20, margin.top + (chartHeight * 3) / 4);
+            
+            // 투구 순서 눈금 그리기
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            const tickCount = Math.min(10, totalRecords);
+            for (let i = 0; i <= tickCount; i++) {
+                const recordIndex = Math.floor((totalRecords / tickCount) * i);
+                const x = margin.left + (chartWidth / tickCount) * i;
+                
+                // 눈금선
+                ctx.strokeStyle = '#eee';
+                ctx.beginPath();
+                ctx.moveTo(x, margin.top);
+                ctx.lineTo(x, margin.top + chartHeight);
+                ctx.stroke();
+                
+                // 순서 라벨
+                ctx.fillText(`#${recordIndex}`, x, canvas.height - 10);
+            }
+            
+            // 범례를 상단으로 이동
+            ctx.fillStyle = '#333';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'left';
+            const legendY = 15;
+            ctx.fillText('이벤트: ⚽G(골) ⬆️H(하이볼) ➡️L(롱볼) ⚠️TP(팀패널티) | 이벤트2: ⚡FB(속공) 🎯PT(패널티스로우)', margin.left, legendY);
+            
+            // 이벤트 포인트 그리기
+            filteredRecords.forEach((record, index) => {
+                const x = margin.left + (index / (totalRecords - 1 || 1)) * chartWidth;
+                const isTeamA = record.team === 'A';
+                const baseY = isTeamA ? margin.top + chartHeight / 4 : margin.top + (chartHeight * 3) / 4;
+                
+                // 랜덤 오프셋 (같은 위치 겹침 방지)
+                const yOffset = (Math.random() - 0.5) * 30;
+                const y = baseY + yOffset;
+                
+                // 이벤트에 따른 색상
+                let color = isTeamA ? '#f44336' : '#2196f3';
+                if (record.event === 'G') color = '#4caf50';       // 골 - 초록
+                else if (record.event === 'H') color = '#ff9800';  // 하이볼 - 주황
+                else if (record.event === 'L') color = '#ff5722';  // 롱볼 - 빨강
+                else if (record.event === 'TP') color = '#9c27b0'; // 팀패널티 - 보라
+                
+                // 이벤트2에 따른 색상 오버라이드
+                if (record.event2 === 'FB') color = '#ff6f00';     // 속공 - 주황
+                else if (record.event2 === 'PT') color = '#00bcd4'; // 패널티스로우 - 청록
+                
+                // 이벤트 원 그리기
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 이벤트 이모티콘/텍스트
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                let emoji = eventEmojis[record.event] || '●';
+                if (record.event2) {
+                    emoji = event2Emojis[record.event2] || emoji;
+                }
+                ctx.fillText(emoji, x, y + 4);
+                
+                // 선수 정보 (위쪽에 표시)
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.fillText(`${record.team}${record.player}`, x, y - 15);
+            });
+        }
+
+        function updateTrajectoryMap() {
+            const map = document.getElementById('trajectoryMap');
+            const filteredRecords = getFilteredRecords();
+            
+            map.querySelectorAll('.court-point, .course-line').forEach(el => el.remove());
+            
+            filteredRecords.forEach(record => {
+                const validPoints = record.course.filter(p => p.x !== null && p.y !== null);
+                
+                // 선수 선택과 구역 선택에 따른 강조 표시 여부 결정
+                let isHighlighted = true;
+                
+                // 선수 선택 필터
+                if (selectedPlayer) {
+                    isHighlighted = (record.team === selectedPlayer.team && record.player === selectedPlayer.player);
+                }
+                
+                // 구역 선택 필터 (선수 선택과 AND 조건)
+                if (selectedZones.size > 0 && isHighlighted) {
+                    isHighlighted = validPoints.some(point => {
+                        const zoneX = Math.floor((point.x / 720) * 8);
+                        const zoneY = Math.floor((point.y / 360) * 8);
+                        return selectedZones.has(`${zoneX},${zoneY}`);
+                    });
+                }
+                
+                validPoints.forEach((point, index) => {
+                    const pointEl = document.createElement('div');
+                    pointEl.className = `court-point team${record.team}`;
+                    pointEl.style.left = (point.x - 6) + 'px';
+                    pointEl.style.top = (point.y - 6) + 'px';
+                    pointEl.title = `${record.team}팀 ${record.player}번 - ${point.type}`;
+                    
+                    // 강조 표시 적용 (선수 선택 또는 구역 선택)
+                    if (selectedPlayer || selectedZones.size > 0) {
+                        if (isHighlighted) {
+                            pointEl.style.opacity = '1';
+                            pointEl.style.transform = 'scale(1.5)';
+                            pointEl.style.boxShadow = '0 0 15px rgba(255,235,59,0.9)';
+                            pointEl.style.zIndex = '100';
+                        } else {
+                            pointEl.style.opacity = '0.15';
+                        }
+                    } else {
+                        pointEl.style.opacity = '0.8';
+                    }
+                    
+                    map.appendChild(pointEl);
+                });
+                
+                for (let i = 0; i < validPoints.length - 1; i++) {
+                    const p1 = validPoints[i];
+                    const p2 = validPoints[i + 1];
+                    
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    
+                    const line = document.createElement('div');
+                    line.className = `course-line team${record.team}`;
+                    line.style.left = p1.x + 'px';
+                    line.style.top = p1.y + 'px';
+                    line.style.width = length + 'px';
+                    line.style.transformOrigin = '0 0';
+                    line.style.transform = `rotate(${angle}deg)`;
+                    
+                    // 강조 표시 적용 (선수 선택 또는 구역 선택)
+                    if (selectedPlayer || selectedZones.size > 0) {
+                        if (isHighlighted) {
+                            line.style.opacity = '1';
+                            line.style.height = '4px';
+                            line.style.boxShadow = '0 0 10px rgba(255,235,59,0.7)';
+                        } else {
+                            line.style.opacity = '0.15';
+                        }
+                    } else {
+                        line.style.opacity = '0.7';
+                    }
+                    
+                    map.appendChild(line);
+                }
+            });
+        }
+
+        function updateHeatMap() {
+            const map = document.getElementById('heatMap');
+            const filteredRecords = getFilteredRecords();
+            
+            map.querySelectorAll('.heat-cell').forEach(el => el.remove());
+            
+            const heatData = {};
+            for (let x = 0; x < 8; x++) {
+                for (let y = 0; y < 8; y++) {
+                    heatData[`${x},${y}`] = 0;
+                }
+            }
+            
+            // 선수 필터링 적용
+            let recordsToAnalyze = filteredRecords;
+            if (selectedPlayer) {
+                recordsToAnalyze = filteredRecords.filter(record => 
+                    record.team === selectedPlayer.team && record.player === selectedPlayer.player
+                );
+            }
+            
+            recordsToAnalyze.forEach(record => {
+                record.course.forEach(point => {
+                    if (point.x !== null && point.y !== null) {
+                        const zoneX = Math.floor((point.x / 720) * 8);
+                        const zoneY = Math.floor((point.y / 360) * 8);
+                        const key = `${zoneX},${zoneY}`;
+                        if (heatData[key] !== undefined) {
+                            heatData[key]++;
+                        }
+                    }
+                });
+            });
+            
+            const maxCount = Math.max(...Object.values(heatData));
+            
+            for (let x = 0; x < 8; x++) {
+                for (let y = 0; y < 8; y++) {
+                    const count = heatData[`${x},${y}`];
+                    const zoneKey = `${x},${y}`;
+                    
+                    if (count > 0) {
+                        const cell = document.createElement('div');
+                        cell.className = 'heat-cell';
+                        cell.style.left = (x * 90) + 'px';
+                        cell.style.top = (y * 45) + 'px';
+                        cell.style.width = '90px';
+                        cell.style.height = '45px';
+                        
+                        const intensity = maxCount > 0 ? count / maxCount : 0;
+                        let alpha = Math.max(0.2, intensity * 0.9);
+                        
+                        // 선택된 구역 또는 선수 강조
+                        if (selectedZones.size > 0 || selectedPlayer) {
+                            if (selectedZones.has(zoneKey)) {
+                                alpha = Math.min(1, alpha * 1.5);
+                                cell.style.background = `linear-gradient(45deg, rgba(255,235,59,${alpha}), rgba(255,193,7,${alpha}))`;
+                                cell.style.border = '3px solid #ffeb3b';
+                                cell.style.boxShadow = '0 0 20px rgba(255,235,59,0.8)';
+                                cell.style.transform = 'scale(1.05)';
+                                cell.style.zIndex = '50';
+                            } else if (selectedPlayer && !selectedZones.size) {
+                                // 선수만 선택된 경우 (구역 선택 없음)
+                                alpha = Math.min(1, alpha * 1.2);
+                                cell.style.background = `linear-gradient(45deg, rgba(255,235,59,${alpha}), rgba(255,193,7,${alpha}))`;
+                                cell.style.border = '2px solid #ffc107';
+                                cell.style.boxShadow = '0 0 12px rgba(255,235,59,0.6)';
+                            } else {
+                                alpha = alpha * 0.3;
+                                cell.style.background = `linear-gradient(45deg, rgba(255,193,7,${alpha}), rgba(255,152,0,${alpha}))`;
+                            }
+                        } else {
+                            cell.style.background = `linear-gradient(45deg, rgba(255,193,7,${alpha}), rgba(255,152,0,${alpha}))`;
+                        }
+                        
+                        cell.textContent = count;
+                        cell.title = `(${x},${y}): ${count}회`;
+                        
+                        map.appendChild(cell);
+                    }
+                }
+            }
+        }
+
+        function clearVisualizations() {
+            const trajectoryMap = document.getElementById('trajectoryMap');
+            const heatMap = document.getElementById('heatMap');
+            const timelineCanvas = document.getElementById('timelineCanvas');
+            
+            if (trajectoryMap) {
+                trajectoryMap.querySelectorAll('.court-point, .course-line').forEach(el => el.remove());
+            }
+            
+            if (heatMap) {
+                heatMap.querySelectorAll('.heat-cell').forEach(el => el.remove());
+            }
+            
+            if (timelineCanvas) {
+                const ctx = timelineCanvas.getContext('2d');
+                ctx.clearRect(0, 0, timelineCanvas.width, timelineCanvas.height);
+                document.getElementById('timelineEmpty').style.display = 'block';
+            }
+        }
+
+        // 데이터 추출 및 이메일 발송 기능
+        function exportJSON() {
+            if (matchData.records.length === 0) {
+                alert('내보낼 기록이 없습니다.');
+                return;
+            }
+            
+            const exportData = {
+                matchInfo: {
+                    date: document.getElementById('matchDate').value,
+                    matchName: document.getElementById('matchName').value,
+                    teamA: document.getElementById('teamA').value,
+                    teamB: document.getElementById('teamB').value,
+                    status: matchData.status,
+                    startTime: matchData.startTime,
+                    exportTime: new Date().toISOString()
+                },
+                records: matchData.records
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `goalball_data_${exportData.matchInfo.date.replace(/-/g, '')}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(link.href);
+        }
+
+        function exportCSV() {
+            if (matchData.records.length === 0) {
+                alert('내보낼 기록이 없습니다.');
+                return;
+            }
+            
+            // CSV 헤더
+            const headers = [
+                '날짜', '경기명', '팀', '선수번호', '포지션', '시간', '스킬', '이벤트', '이벤트2',
+                '이동위치X', '이동위치Y', '이동구역',
+                '출발위치X', '출발위치Y', '출발구역',
+                '릴리스위치X', '릴리스위치Y', '릴리스구역',
+                '방향위치X', '방향위치Y', '방향구역',
+                '경기시간(초)', '기록시간'
+            ];
+            
+            // CSV 데이터 행들
+            const rows = matchData.records.map(record => {
+                // type별로 올바른 순서로 데이터 가져오기
+                const movePoint = record.course.find(p => p.type === 'move') || {};
+                const startPoint = record.course.find(p => p.type === 'start') || {};
+                const releasePoint = record.course.find(p => p.type === 'release') || {};
+                const directionPoint = record.course.find(p => p.type === 'direction') || {};
+                
+                return [
+                    document.getElementById('matchDate').value,
+                    document.getElementById('matchName').value,
+                    record.team,
+                    record.player,
+                    record.position || '-',
+                    record.period || '전반',
+                    record.skill || '',
+                    record.event || '',
+                    record.event2 || '',
+                    movePoint.x || '',
+                    movePoint.y || '',
+                    movePoint.zone || '',
+                    startPoint.x || '',
+                    startPoint.y || '',
+                    startPoint.zone || '',
+                    releasePoint.x || '',
+                    releasePoint.y || '',
+                    releasePoint.zone || '',
+                    directionPoint.x || '',
+                    directionPoint.y || '',
+                    directionPoint.zone || '',
+                    record.gameTime || '',
+                    record.timestamp
+                ];
+            });
+            
+            // CSV 문자열 생성
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(field => `"${field}"`).join(','))
+                .join('\n');
+            
+            // BOM 추가 (한글 인코딩을 위해)
+            const BOM = '\uFEFF';
+            const dataBlob = new Blob([BOM + csvContent], {type: 'text/csv;charset=utf-8'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `goalball_data_${document.getElementById('matchDate').value.replace(/-/g, '')}.csv`;
+            link.click();
+            
+            URL.revokeObjectURL(link.href);
+        }
+
+        function showEmailDialog() {
+            if (matchData.records.length === 0) {
+                alert('발송할 기록이 없습니다.');
+                return;
+            }
+            
+            document.getElementById('emailDialog').style.display = 'block';
+            document.getElementById('emailOverlay').style.display = 'block';
+            document.getElementById('recipientEmail').focus();
+        }
+
+        function closeEmailDialog() {
+            document.getElementById('emailDialog').style.display = 'none';
+            document.getElementById('emailOverlay').style.display = 'none';
+        }
+
+        function sendEmail() {
+            const recipientEmail = document.getElementById('recipientEmail').value.trim();
+            const senderEmail = document.getElementById('senderEmail').value.trim();
+            
+            if (!recipientEmail) {
+                alert('받는 사람 이메일을 입력해주세요.');
+                return;
+            }
+            
+            if (!senderEmail) {
+                alert('보내는 사람 이메일을 입력해주세요.');
+                return;
+            }
+            
+            if (!validateEmail(recipientEmail)) {
+                alert('받는 사람 이메일 주소가 올바르지 않습니다.');
+                return;
+            }
+            
+            if (!validateEmail(senderEmail)) {
+                alert('보내는 사람 이메일 주소가 올바르지 않습니다.');
+                return;
+            }
+            
+            const format = document.querySelector('input[name="emailFormat"]:checked').value;
+            const message = document.getElementById('emailMessage').value.trim();
+            
+            // 이메일 제목 및 내용 생성
+            const matchDate = document.getElementById('matchDate').value;
+            const matchName = document.getElementById('matchName').value;
+            const teamA = document.getElementById('teamA').value;
+            const teamB = document.getElementById('teamB').value;
+            
+            const subject = `골볼 경기 기록 데이터 - ${teamA} vs ${teamB} (${matchDate})`;
+            
+            let emailBody = `안녕하세요,\n\n`;
+            emailBody += `${matchDate}에 진행된 ${teamA} vs ${teamB} 골볼 경기의 기록 데이터를 전송합니다.\n\n`;
+            emailBody += `경기 정보:\n`;
+            emailBody += `- 경기 날짜: ${matchDate}\n`;
+            emailBody += `- 경기명: ${matchName}\n`;
+            emailBody += `- 팀 A: ${teamA}\n`;
+            emailBody += `- 팀 B: ${teamB}\n`;
+            emailBody += `- 총 기록 수: ${matchData.records.length}개\n`;
+            emailBody += `- 데이터 형식: ${format.toUpperCase()}\n\n`;
+            
+            if (message) {
+                emailBody += `추가 메시지:\n${message}\n\n`;
+            }
+            
+            emailBody += `첨부파일로 상세 데이터를 확인하실 수 있습니다.\n\n`;
+            emailBody += `감사합니다.`;
+            
+            // 데이터 생성
+            let attachmentData, fileName, mimeType;
+            
+            if (format === 'json') {
+                const exportData = {
+                    matchInfo: {
+                        date: matchDate,
+                        matchName: matchName,
+                        teamA: teamA,
+                        teamB: teamB,
+                        status: matchData.status,
+                        startTime: matchData.startTime,
+                        exportTime: new Date().toISOString()
+                    },
+                    records: matchData.records
+                };
+                attachmentData = JSON.stringify(exportData, null, 2);
+                fileName = `goalball_data_${matchDate.replace(/-/g, '')}.json`;
+                mimeType = 'application/json';
+            } else {
+                // CSV 생성 (위의 exportCSV 함수와 동일한 로직)
+                const headers = [
+                    '날짜', '경기명', '팀', '선수번호', '포지션', '시간', '스킬', '이벤트', '이벤트2',
+                    '이동위치X', '이동위치Y', '이동구역',
+                    '출발위치X', '출발위치Y', '출발구역',
+                    '릴리스위치X', '릴리스위치Y', '릴리스구역',
+                    '방향위치X', '방향위치Y', '방향구역',
+                    '경기시간(초)', '기록시간'
+                ];
+                
+                const rows = matchData.records.map(record => {
+                    // type별로 올바른 순서로 데이터 가져오기
+                    const movePoint = record.course.find(p => p.type === 'move') || {};
+                    const startPoint = record.course.find(p => p.type === 'start') || {};
+                    const releasePoint = record.course.find(p => p.type === 'release') || {};
+                    const directionPoint = record.course.find(p => p.type === 'direction') || {};
+                    
+                    return [
+                        matchDate, matchName, record.team, record.player, record.position || '-', record.period || '전반', record.skill || '', record.event || '', record.event2 || '',
+                        movePoint.x || '', movePoint.y || '', movePoint.zone || '',
+                        startPoint.x || '', startPoint.y || '', startPoint.zone || '',
+                        releasePoint.x || '', releasePoint.y || '', releasePoint.zone || '',
+                        directionPoint.x || '', directionPoint.y || '', directionPoint.zone || '',
+                        record.gameTime || '', record.timestamp
+                    ];
+                });
+                
+                attachmentData = '\uFEFF' + [headers, ...rows]
+                    .map(row => row.map(field => `"${field}"`).join(','))
+                    .join('\n');
+                fileName = `goalball_data_${matchDate.replace(/-/g, '')}.csv`;
+                mimeType = 'text/csv';
+            }
+            
+            // 이메일 클라이언트 열기 (mailto 링크 사용)
+            // 실제 파일 첨부는 브라우저 보안 제한으로 인해 직접 불가능하므로
+            // 사용자에게 수동으로 첨부하도록 안내
+            const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+            
+            // 데이터 파일 자동 다운로드
+            const dataBlob = new Blob([attachmentData], {type: mimeType});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = fileName;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            // 이메일 클라이언트 열기
+            window.open(mailtoLink);
+            
+            alert(`이메일 클라이언트가 열렸습니다.\n다운로드된 ${fileName} 파일을 수동으로 첨부해주세요.`);
+            
+            closeEmailDialog();
+        }
+
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // 포지션 시퀀스 업데이트
+        function updatePositionSequence() {
+            const filteredRecords = getFilteredRecords();
+            
+            // A팀과 B팀 분리
+            const teamARecords = filteredRecords.filter(r => r.team === 'A').sort((a, b) => (a.gameTime || 0) - (b.gameTime || 0));
+            const teamBRecords = filteredRecords.filter(r => r.team === 'B').sort((a, b) => (a.gameTime || 0) - (b.gameTime || 0));
+            
+            // A팀 그리기
+            drawPositionSequence('sequenceCanvasA', teamARecords, '#f44336');
+            drawPositionFreq('positionFreqA', teamARecords, '#f44336');
+            
+            // B팀 그리기
+            drawPositionSequence('sequenceCanvasB', teamBRecords, '#2196f3');
+            drawPositionFreq('positionFreqB', teamBRecords, '#2196f3');
+            
+            // 골 전 코스 패턴 분석
+            updateGoalCoursePattern(filteredRecords);
+        }
+
+        function drawPositionSequence(canvasId, records, teamColor) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (records.length === 0) {
+                ctx.fillStyle = '#999';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('데이터 없음', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            // 포지션이 있는 레코드만 필터링
+            const validRecords = records.filter(r => r.position && r.position !== '-');
+            
+            if (validRecords.length === 0) {
+                ctx.fillStyle = '#999';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('포지션 정보 없음', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            const margin = { top: 30, right: 30, bottom: 20, left: 50 };
+            const chartWidth = canvas.width - margin.left - margin.right;
+            const chartHeight = canvas.height - margin.top - margin.bottom;
+            
+            // 3개 레인 (L, C, R)
+            const lanes = {
+                'L': margin.top + chartHeight * 0.17,
+                'C': margin.top + chartHeight * 0.5,
+                'R': margin.top + chartHeight * 0.83
+            };
+            
+            // 배경
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(margin.left, margin.top, chartWidth, chartHeight);
+            
+            // 레인 구분선
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            Object.values(lanes).forEach(y => {
+                ctx.beginPath();
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(margin.left + chartWidth, y);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+            
+            // Y축 라벨
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('L', margin.left - 10, lanes['L'] + 5);
+            ctx.fillText('C', margin.left - 10, lanes['C'] + 5);
+            ctx.fillText('R', margin.left - 10, lanes['R'] + 5);
+            
+            // 시퀀스 포인트 계산
+            const points = validRecords.map((record, idx) => {
+                const x = margin.left + (chartWidth / (validRecords.length + 1)) * (idx + 1);
+                const y = lanes[record.position];
+                return { x, y, record, idx };
+            });
+            
+            // 시퀀스 라인 그리기
+            if (points.length > 1) {
+                ctx.strokeStyle = teamColor;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                points.forEach((point, idx) => {
+                    if (idx === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+            
+            // 포인트 그리기
+            points.forEach((point, idx) => {
+                // 원
+                ctx.fillStyle = teamColor;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 테두리
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 순서 번호
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${idx + 1}`, point.x, point.y - 12);
+            });
+            
+            // 하단에 시퀀스 텍스트 표시
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            const sequenceText = validRecords.map(r => r.position).join(' → ');
+            const maxWidth = chartWidth - 20;
+            if (ctx.measureText(sequenceText).width > maxWidth) {
+                ctx.fillText(sequenceText.substring(0, 50) + '...', canvas.width / 2, canvas.height - 5);
+            } else {
+                ctx.fillText(sequenceText, canvas.width / 2, canvas.height - 5);
+            }
+        }
+
+        function drawPositionFreq(elementId, records, teamColor) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            // 포지션 카운트
+            const positionCount = { 'L': 0, 'C': 0, 'R': 0 };
+            records.forEach(r => {
+                if (r.position && r.position !== '-' && positionCount.hasOwnProperty(r.position)) {
+                    positionCount[r.position]++;
+                }
+            });
+            
+            const total = positionCount.L + positionCount.C + positionCount.R;
+            
+            if (total === 0) {
+                element.innerHTML = '<div style="color: #999;">포지션 정보 없음</div>';
+                return;
+            }
+            
+            // 비율 계산
+            const percentL = ((positionCount.L / total) * 100).toFixed(1);
+            const percentC = ((positionCount.C / total) * 100).toFixed(1);
+            const percentR = ((positionCount.R / total) * 100).toFixed(1);
+            
+            // HTML 생성
+            element.innerHTML = `
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 3px;"><strong>L:</strong> ${positionCount.L}회 (${percentL}%)</div>
+                        <div style="margin-bottom: 3px;"><strong>C:</strong> ${positionCount.C}회 (${percentC}%)</div>
+                        <div><strong>R:</strong> ${positionCount.R}회 (${percentR}%)</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 3px; display: flex; align-items: center;">
+                            <div style="width: 15px; font-size: 10px; text-align: right; margin-right: 5px;">L</div>
+                            <div style="flex: 1; height: 14px; background: #e0e0e0; border-radius: 7px; overflow: hidden;">
+                                <div style="width: ${percentL}%; height: 100%; background: ${teamColor};"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 3px; display: flex; align-items: center;">
+                            <div style="width: 15px; font-size: 10px; text-align: right; margin-right: 5px;">C</div>
+                            <div style="flex: 1; height: 14px; background: #e0e0e0; border-radius: 7px; overflow: hidden;">
+                                <div style="width: ${percentC}%; height: 100%; background: ${teamColor};"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 3px; display: flex; align-items: center;">
+                            <div style="width: 15px; font-size: 10px; text-align: right; margin-right: 5px;">R</div>
+                            <div style="flex: 1; height: 14px; background: #e0e0e0; border-radius: 7px; overflow: hidden;">
+                                <div style="width: ${percentR}%; height: 100%; background: ${teamColor};"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateGoalCoursePattern(records) {
+            const element = document.getElementById('goalPatternSection');
+            if (!element) return;
+            
+            // 시간순 정렬
+            const sortedRecords = [...records].sort((a, b) => (a.gameTime || 0) - (b.gameTime || 0));
+            
+            // 골 이벤트 찾기
+            const goalIndices = [];
+            sortedRecords.forEach((record, idx) => {
+                if (record.event === 'G') {
+                    goalIndices.push(idx);
+                }
+            });
+            
+            if (goalIndices.length === 0) {
+                element.innerHTML = '<div style="color: #999; font-size: 12px;">골 이벤트가 없습니다</div>';
+                return;
+            }
+            
+            // 각 골 전 5개 코스패턴 추출
+            let html = '<strong style="font-size: 13px;">⚽ 골 이벤트 전 5개 코스패턴</strong><br>';
+            
+            goalIndices.forEach((goalIdx, gNum) => {
+                const startIdx = Math.max(0, goalIdx - 5);
+                const patternRecords = sortedRecords.slice(startIdx, goalIdx);
+                
+                const goalRecord = sortedRecords[goalIdx];
+                
+                // 이전 5개 + 골 이벤트까지 포함 (총 6개)
+                const allRecords = [...patternRecords, goalRecord];
+                
+                const patterns = allRecords.map((r, idx) => {
+                    if (idx === allRecords.length - 1) {
+                        // 마지막(골 이벤트)은 포인트 표시
+                        return `<span style="color: #ff0000; font-weight: bold;">${r.pattern || '미지정'} (득점)</span>`;
+                    }
+                    return r.pattern || '미지정';
+                });
+                
+                const goalTeam = goalRecord.team;
+                const goalPlayer = goalRecord.player;
+                const goalTime = Math.floor((goalRecord.gameTime || 0) / 60) + ':' + Math.floor((goalRecord.gameTime || 0) % 60).toString().padStart(2, '0');
+                
+                // 이전 5개 + 골 이벤트 포지션 시퀀스
+                const positions = allRecords.map((r, idx) => {
+                    if (idx === allRecords.length - 1) {
+                        // 골 이벤트는 강조 표시
+                        return `<span style="color: #ff0000; font-weight: bold;">${r.position || '-'}</span>`;
+                    }
+                    return r.position || '-';
+                });
+                
+                html += `
+                    <div style="margin-top: 10px; padding: 10px; background: #f0f8f0; border-left: 3px solid #4caf50; border-radius: 4px;">
+                        <div style="font-size: 12px; margin-bottom: 8px;">
+                            <strong>골 #${gNum + 1}:</strong> ${goalTeam}팀 ${goalPlayer}번 (${goalTime})
+                        </div>
+                        <div style="font-size: 11px; color: #666; margin-bottom: 4px;">
+                            <strong>포지션 시퀀스:</strong> ${positions.length > 0 ? positions.join(' → ') : '(데이터 없음)'}
+                        </div>
+                        <div style="font-size: 11px; color: #666;">
+                            <strong>코스패턴:</strong> ${patterns.length > 0 ? patterns.join(' → ') : '(데이터 없음)'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            element.innerHTML = html;
+        }
+
+        // 전체 선택 토글 함수들
+        function toggleAllTeam() {
+            const teamA = document.getElementById('filterTeamA');
+            const teamB = document.getElementById('filterTeamB');
+            const allChecked = teamA.checked && teamB.checked;
+            teamA.checked = !allChecked;
+            teamB.checked = !allChecked;
+        }
+
+        function toggleAllPeriod() {
+            const firstHalf = document.getElementById('filterFirstHalf');
+            const secondHalf = document.getElementById('filterSecondHalf');
+            const overtime = document.getElementById('filterOvertime');
+            const allChecked = firstHalf.checked && secondHalf.checked && overtime.checked;
+            firstHalf.checked = !allChecked;
+            secondHalf.checked = !allChecked;
+            overtime.checked = !allChecked;
+        }
+
+        function toggleAllPlayer() {
+            const playerFilters = document.querySelectorAll('.player-filter');
+            const allChecked = Array.from(playerFilters).every(cb => cb.checked);
+            playerFilters.forEach(cb => cb.checked = !allChecked);
+        }
+
+        function toggleAllPosition() {
+            const positionFilters = document.querySelectorAll('.position-filter');
+            const allChecked = Array.from(positionFilters).every(cb => cb.checked);
+            positionFilters.forEach(cb => cb.checked = !allChecked);
+        }
+
+        function toggleAllSkill() {
+            const skillFilters = document.querySelectorAll('.skill-filter');
+            const allChecked = Array.from(skillFilters).every(cb => cb.checked);
+            skillFilters.forEach(cb => cb.checked = !allChecked);
+        }
+
+        function toggleAllEvent() {
+            const eventFilters = document.querySelectorAll('.event-filter');
+            const allChecked = Array.from(eventFilters).every(cb => cb.checked);
+            eventFilters.forEach(cb => cb.checked = !allChecked);
+        }
+
+        function toggleAllEvent2() {
+            const event2Filters = document.querySelectorAll('.event2-filter');
+            const allChecked = Array.from(event2Filters).every(cb => cb.checked);
+            event2Filters.forEach(cb => cb.checked = !allChecked);
+        }
+
+        // 초기화
+        document.getElementById('matchDate').value = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>
