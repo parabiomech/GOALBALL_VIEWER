@@ -1,0 +1,241 @@
+{
+  "matchDate": "2025-01-15",
+  "matchName": "샘플 경기",
+  "teamA": "한국팀",
+  "teamB": "일본팀",
+  "startTime": 1705305600000,
+  "positionMap": {
+    "A": { "L": 1, "C": 2, "R": 3 },
+    "B": { "L": 11, "C": 12, "R": 13 }
+  },
+  "records": [
+    {
+      "id": 1,
+      "timestamp": "2025-01-15 10:00:15",
+      "team": "A",
+      "player": 1,
+      "position": "L",
+      "period": "전반",
+      "skill": "F",
+      "event": "G",
+      "event2": "",
+      "pattern": "A-03 → A-02 → A-01 → A-01",
+      "gameTime": 15.5,
+      "course": [
+        { "type": "move", "x": 540, "y": 45 },
+        { "type": "start", "x": 360, "y": 45 },
+        { "type": "release", "x": 180, "y": 45 },
+        { "type": "direction", "x": 90, "y": 90 }
+      ]
+    },
+    {
+      "id": 2,
+      "timestamp": "2025-01-15 10:00:42",
+      "team": "B",
+      "player": 11,
+      "position": "L",
+      "period": "전반",
+      "skill": "SB",
+      "event": "H",
+      "event2": "",
+      "pattern": "B-03 → B-02 → B-01 → B-01",
+      "gameTime": 42.3,
+      "course": [
+        { "type": "move", "x": 540, "y": 315 },
+        { "type": "start", "x": 360, "y": 315 },
+        { "type": "release", "x": 180, "y": 315 },
+        { "type": "direction", "x": 90, "y": 270 }
+      ]
+    },
+    {
+      "id": 3,
+      "timestamp": "2025-01-15 10:01:18",
+      "team": "A",
+      "player": 2,
+      "position": "C",
+      "period": "전반",
+      "skill": "2B",
+      "event": "",
+      "event2": "",
+      "pattern": "A-12 → A-12 → A-01 → A-02",
+      "gameTime": 78.7,
+      "course": [
+        { "type": "move", "x": 360, "y": 180 },
+        { "type": "start", "x": 360, "y": 180 },
+        { "type": "release", "x": 180, "y": 135 },
+        { "type": "direction", "x": 90, "y": 180 }
+      ]
+    },
+    {
+      "id": 4,
+      "timestamp": "2025-01-15 10:01:55",
+      "team": "B",
+      "player": 12,
+      "position": "C",
+      "period": "전반",
+      "skill": "3B",
+      "event": "L",
+      "event2": "",
+      "pattern": "B-12 → B-02 → B-01 → B-02",
+      "gameTime": 115.2,
+      "course": [
+        { "type": "move", "x": 360, "y": 180 },
+        { "type": "start", "x": 360, "y": 270 },
+        { "type": "release", "x": 180, "y": 270 },
+        { "type": "direction", "x": 90, "y": 225 }
+      ]
+    },
+    {
+      "id": 5,
+      "timestamp": "2025-01-15 10:02:30",
+      "team": "A",
+      "player": 3,
+      "position": "R",
+      "period": "전반",
+      "skill": "F",
+      "event": "G",
+      "event2": "",
+      "pattern": "A-01 → A-01 → A-01 → A-01",
+      "gameTime": 150.8,
+      "course": [
+        { "type": "move", "x": 180, "y": 45 },
+        { "type": "start", "x": 180, "y": 45 },
+        { "type": "release", "x": 180, "y": 45 },
+        { "type": "direction", "x": 90, "y": 90 }
+      ]
+    },
+    {
+      "id": 6,
+      "timestamp": "2025-01-15 10:03:05",
+      "team": "B",
+      "player": 13,
+      "position": "R",
+      "period": "전반",
+      "skill": "TF",
+      "event": "H",
+      "event2": "",
+      "pattern": "B-01 → B-01 → B-01 → B-02",
+      "gameTime": 185.4,
+      "course": [
+        { "type": "move", "x": 180, "y": 315 },
+        { "type": "start", "x": 180, "y": 315 },
+        { "type": "release", "x": 180, "y": 315 },
+        { "type": "direction", "x": 90, "y": 270 }
+      ]
+    },
+    {
+      "id": 7,
+      "timestamp": "2025-01-15 10:03:42",
+      "team": "A",
+      "player": 1,
+      "position": "L",
+      "period": "전반",
+      "skill": "SB",
+      "event": "",
+      "event2": "FB",
+      "pattern": "A-03 → A-02 → A-01 → A-03",
+      "gameTime": 222.1,
+      "course": [
+        { "type": "move", "x": 540, "y": 45 },
+        { "type": "start", "x": 360, "y": 45 },
+        { "type": "release", "x": 180, "y": 45 },
+        { "type": "direction", "x": 90, "y": 45 }
+      ]
+    },
+    {
+      "id": 8,
+      "timestamp": "2025-01-15 10:04:15",
+      "team": "B",
+      "player": 11,
+      "position": "L",
+      "period": "전반",
+      "skill": "F",
+      "event": "G",
+      "event2": "",
+      "pattern": "B-03 → B-02 → B-01 → B-01",
+      "gameTime": 255.7,
+      "course": [
+        { "type": "move", "x": 540, "y": 315 },
+        { "type": "start", "x": 360, "y": 315 },
+        { "type": "release", "x": 180, "y": 315 },
+        { "type": "direction", "x": 90, "y": 270 }
+      ]
+    },
+    {
+      "id": 9,
+      "timestamp": "2025-01-15 10:04:48",
+      "team": "A",
+      "player": 2,
+      "position": "C",
+      "period": "전반",
+      "skill": "2B",
+      "event": "H",
+      "event2": "",
+      "pattern": "A-12 → A-12 → A-01 → A-02",
+      "gameTime": 288.3,
+      "course": [
+        { "type": "move", "x": 360, "y": 180 },
+        { "type": "start", "x": 360, "y": 180 },
+        { "type": "release", "x": 180, "y": 135 },
+        { "type": "direction", "x": 90, "y": 180 }
+      ]
+    },
+    {
+      "id": 10,
+      "timestamp": "2025-01-15 10:05:22",
+      "team": "B",
+      "player": 12,
+      "position": "C",
+      "period": "전반",
+      "skill": "3B",
+      "event": "",
+      "event2": "",
+      "pattern": "B-12 → B-02 → B-01 → B-02",
+      "gameTime": 322.9,
+      "course": [
+        { "type": "move", "x": 360, "y": 180 },
+        { "type": "start", "x": 360, "y": 270 },
+        { "type": "release", "x": 180, "y": 270 },
+        { "type": "direction", "x": 90, "y": 225 }
+      ]
+    },
+    {
+      "id": 11,
+      "timestamp": "2025-01-15 10:20:05",
+      "team": "A",
+      "player": 1,
+      "position": "L",
+      "period": "후반",
+      "skill": "F",
+      "event": "G",
+      "event2": "",
+      "pattern": "A-03 → A-02 → A-01 → A-01",
+      "gameTime": 1205.2,
+      "course": [
+        { "type": "move", "x": 540, "y": 45 },
+        { "type": "start", "x": 360, "y": 45 },
+        { "type": "release", "x": 180, "y": 45 },
+        { "type": "direction", "x": 90, "y": 90 }
+      ]
+    },
+    {
+      "id": 12,
+      "timestamp": "2025-01-15 10:20:38",
+      "team": "B",
+      "player": 11,
+      "position": "L",
+      "period": "후반",
+      "skill": "SB",
+      "event": "L",
+      "event2": "",
+      "pattern": "B-03 → B-02 → B-01 → B-03",
+      "gameTime": 1238.5,
+      "course": [
+        { "type": "move", "x": 540, "y": 315 },
+        { "type": "start", "x": 360, "y": 315 },
+        { "type": "release", "x": 180, "y": 315 },
+        { "type": "direction", "x": 90, "y": 315 }
+      ]
+    }
+  ]
+}
